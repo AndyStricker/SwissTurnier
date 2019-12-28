@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright © 2013 Andreas Stricker <andy@knitter.ch>
+# 
+# This file is part of Athrank.
+# 
+# Athrank is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
+import argparse
+import sys
+sys.path.append(os.getcwd())
+import swissturnier.db
+from swissturnier.ranking import Turnier
+
+def main():
+    parser = argparse.ArgumentParser(description='Swisstunier ranking tool')
+    parser.add_argument('--init', default=False, action='store_true',
+                        help='Reinitialize ranking table')
+    parser.add_argument('--rank', default=False, action='store_true',
+                        help='Only do the rankings')
+    parser.add_argument('--next', default=False, action='store_true',
+                        help='Start with next round')
+    args = parser.parse_args()
+
+    db = swissturnier.db.DB()
+    turnier = Turnier(db)
+
+    if args.init:
+        turnier.init_rankings()
+    elif args.rank:
+        turnier.rank()
+    elif args.next:
+        turnier.next_round()
+    else:
+        parser.help()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,26 @@
+Initial Setup commands
+======================
+
+Create database and user
+------------------------
+
+sudo -u postgres -s
+postgres@host$ createdb swissturnier
+postgres@host$ createuser -S -D -R stuser
+postgres@host$ psql
+postgres=# ALTER USER stuser WITH PASSWORD 'secret';
+
+
+Create relations
+----------------
+
+user@host$ psql -h localhost -p 5432 -U stuser swissturnier
+
+athrank=> \i db/awards.sql 
+athrank=> \i db/sexes.sql 
+athrank=> \i db/sections.sql 
+athrank=> \i db/categories.sql 
+athrank=> \i db/category.sql 
+athrank=> \i db/agecategory.sql 
+
+athrank=> \i participants.sql
