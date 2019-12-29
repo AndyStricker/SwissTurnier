@@ -68,12 +68,14 @@ class Turnier(object):
                     rank_a.points += play.points_a
                     rank_a.wins += wins_a
 
+                    if play.id_team_b is None:  # byes
+                        continue
                     rank_b = session.query(Rankings).filter_by(id_team=play.id_team_b).one()
                     rank_b.points += play.points_b
                     rank_b.wins += wins_b
             # sort by wins, then by points
-            for num, rank in enumerate(session.query(Rankings).order_by('wins', 'points').all()):
-                rank.rank = num
+            for num, rank in enumerate(session.query(Rankings).order_by(sqlalchemy.desc('wins'), sqlalchemy.desc('points')).all()):
+                rank.rank = num + 1
 
     def _team_play_wins(self, points_a, points_b):
         """ Winning a game get one point, drawn get a half point """
@@ -111,11 +113,11 @@ class Turnier(object):
         """ check if two teams have already played against before """
         return (session.query(PlayRound)
             .filter(
-                or_(
-                    and_(
+                sqlalchemy.or_(
+                    sqlalchemy.and_(
                         PlayRound.id_team_a == team1.id_team,
                         PlayRound.id_team_b == team2.id_team),
-                    and_(
+                    sqlalchemy.and_(
                         PlayRound.id_team_a == team2.id_team,
                         PlayRound.id_team_b == team1.id_team)
                 )
