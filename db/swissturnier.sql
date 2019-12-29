@@ -90,8 +90,6 @@ ALTER TABLE public.playround OWNER TO stuser;
 ALTER TABLE ONLY playround
     ADD CONSTRAINT playround_pkey PRIMARY KEY (id_playround);
 ALTER TABLE ONLY playround
-    ADD CONSTRAINT round_number_key UNIQUE (round_number);
-ALTER TABLE ONLY playround
     ADD CONSTRAINT playround_id_team_a_fkey FOREIGN KEY (id_team_a) REFERENCES team(id_team);
 ALTER TABLE ONLY playround
     ADD CONSTRAINT playround_id_team_b_fkey FOREIGN KEY (id_team_b) REFERENCES team(id_team);
