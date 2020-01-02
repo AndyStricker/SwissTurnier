@@ -94,7 +94,7 @@ class Turnier(object):
     def generate_round_playplan(self):
         """ Assing teams for the next round of play """
         with self.db.session_scope() as session:
-            current_round = session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
+            current_round = swissturnier.db.query_current_round(session)
             # TODO: Check for byes and assign them first to make ranks even
             ranks = session.query(Rankings).order_by('rank').all()
             while len(ranks) > 1:
