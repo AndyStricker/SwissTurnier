@@ -165,3 +165,9 @@ class Rankings(Base):
         Team,
         backref=sqlalchemy.orm.backref('teams', uselist=True, cascade='delete,all'))
 
+
+def query_current_round(session):
+    """ Get the current round number from DB """
+    return session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
+
+
