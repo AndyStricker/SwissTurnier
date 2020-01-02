@@ -51,14 +51,19 @@ class Turnier(object):
         self.rank()
         self.generate_round_playplan()
 
-    def rank(self):
+    def rank(self, to_round=None):
         """ Calculate rankings until current round """
         with self.db.session_scope() as session:
             round_count = session.query(PlayRound).distinct(PlayRound.round_number).count()
             if round_count == 0:
                 return  # no plays yet, nothing to calculate
-            # rank all plays
-            current_round = session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
+
+            if to_round is None or to_round == 0:
+                # rank all plays
+                current_round = swissturnier.db.query_current_round(session)
+            else:
+                current_round = to_round
+
             for play_round in range(1, current_round + 1):
                 plays = session.query(PlayRound).filter_by(round_number=play_round).all()
                 for play in plays:
