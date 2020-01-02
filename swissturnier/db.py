@@ -32,7 +32,7 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 class DB(object):
     """ Encapsulate the ORM logic and provides sessions and transactions """
 
-    def __init__(self):
+    def __init__(self, config_file='config.json'):
         self._config = {
             'database': 'swissturnier',
             'schema': 'postgres',
@@ -44,7 +44,7 @@ class DB(object):
         self._engine = None
         self._connection = None
         self._sessionmaker = None
-        self._init_config()
+        self._init_config(config_file)
 
     @property
     def config(self):
@@ -96,9 +96,9 @@ class DB(object):
         finally:
             session.close()
 
-    def _init_config(self):
+    def _init_config(self, config_file):
         try:
-            with open('config.json', 'r') as f:
+            with open(config_file, 'r') as f:
                 fcfg = json.load(f)
                 self._config.update(fcfg)
         except IOError as e:
