@@ -91,6 +91,12 @@ class Turnier(object):
         else:
             return (0.0, 1.0)
 
+    def check_complete(self, to_round):
+        with self.db.session_scope() as session:
+            missing_a = session.query(PlayRound).filter_by(points_a=None).count()
+            missing_b = session.query(PlayRound).filter_by(points_b=None).count()
+            return (missing_a == 0 or missing_b <= 1)
+
     def generate_round_playplan(self):
         """ Assing teams for the next round of play """
         with self.db.session_scope() as session:
