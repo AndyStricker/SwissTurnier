@@ -24,29 +24,80 @@ import sys
 sys.path.append(os.getcwd())
 import swissturnier.db
 from swissturnier.ranking import Turnier
+from swissturnier.report import ConsoleRankingTableReport, ConsolePlayTableReport
 
-def main():
-    parser = argparse.ArgumentParser(description='Swisstunier ranking tool')
-    parser.add_argument('--init', default=False, action='store_true',
-                        help='Reinitialize ranking table')
-    parser.add_argument('--rank', default=False, action='store_true',
-                        help='Only do the rankings')
-    parser.add_argument('--next', default=False, action='store_true',
-                        help='Start with next round')
-    args = parser.parse_args()
+def db_instance(args):
+    dbargs = {}
+    if args.config:
+        dbargs['config'] = args.config
+    return swissturnier.db.DB(**dbargs)
 
-    db = swissturnier.db.DB()
+def rank(args):
+    db = db_instance(args)
     turnier = Turnier(db)
+
+    if (args.rank or args.next) and not turnier.check_complete(to_round=args.to_number):
+        print("Warning: Plays are not complete yet!")
+        return
 
     if args.init:
         turnier.init_rankings()
     elif args.rank:
-        turnier.rank()
+        turnier.rank(to_round=args.to_number)
     elif args.next:
         turnier.next_round()
-    else:
-        parser.help()
 
+def report(args):
+    db = db_instance(args)
+    turnier = Turnier(db)
+
+    if args.show:
+        report = ConsoleRankingTableReport(db)
+        report.print(sys.stdout, full=args.full)
+    elif args.playtable:
+        report = ConsolePlayTableReport(db)
+        report.print(sys.stdout, full=args.full)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='turnier',
+        description="Swisstunier ranking tool"
+    )
+    parser.add_argument('--config', metavar='FILE',
+                        help="Path to configuration file")
+    subparsers = parser.add_subparsers(
+        title="ranking subcommands",
+        description="Available ranking subcommands",
+        dest='command_name',
+        help="Subcommand help text"
+    )
+
+    rankparser = subparsers.add_parser('rankings',
+        aliases=('rank',),
+        help="Ranking command"
+    )
+    #rankparser.set_defaults(func=rank)
+    rankparser.add_argument('--init', default=False, action='store_true',
+                        help="Reinitialize ranking table")
+    rankparser.add_argument('--rank', default=False, action='store_true',
+                        help="Only do the rankings")
+    rankparser.add_argument('--to-number', metavar='N', default=None, type=int,
+                        help="Rank only to this number")
+    rankparser.add_argument('--next', default=False, action='store_true',
+                        help="Start with next round")
+    reportparser = subparsers.add_parser('report',
+        help="Report command")
+    #reportparser.set_defaults(func=report)
+    reportparser.add_argument('--full', default=False, action='store_true',
+                        help="Show full ranking tables data")
+    reportparser.add_argument('--show', default=False, action='store_true',
+                        help="Show ranking tables")
+    reportparser.add_argument('--playtable', default=False, action='store_true',
+                        help="Show play tables")
+
+    args = parser.parse_args()
+    globals()[args.command_name](args)
 
 if __name__ == '__main__':
     main()
