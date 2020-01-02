@@ -137,9 +137,7 @@ class Team(Base):
     id_team = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     id_category = Column(ForeignKey('category.id_category'), nullable=False)
-#    category = sqlalchemy.orm.relationship(
-#        Category,
-#        backref=sqlalchemy.orm.backref('teams', uselist=True, cascade='delete,all'))
+    category = sqlalchemy.orm.relationship(Category)
 
 
 class PlayRound(Base):
@@ -151,12 +149,8 @@ class PlayRound(Base):
     id_team_b = Column(ForeignKey('team.id_team'))
     points_a = Column(Integer)
     points_b = Column(Integer)
-#    team_a = sqlalchemy.orm.relationship(
-#        Team,
-#        backref=sqlalchemy.orm.backref('teams', uselist=True, cascade='delete,all'))
-#    team_b = sqlalchemy.orm.relationship(
-#        Team,
-#        backref=sqlalchemy.orm.backref('teams', uselist=True, cascade='delete,all'))
+    team_a = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_a)
+    team_b = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_b)
 
 
 class Rankings(Base):
