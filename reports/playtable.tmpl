@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+<title>$title</title>
+<style type="text/css">
+<!--
+body {
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 11pt;
+}
+table { border-collapse: collapse; empty-cells: show; }
+table tr { border: 1px solid black; }
+th, td { padding: 0 0.4em; }
+.rank { width: 1.05cm; font-weight: bold; text-align: center; }
+.name { width: 3.4cm; }
+.section { width: 2.6cm; }
+.age_cohort { width: 1.0cm; }
+.discipline.result { width: 1.3cm; }
+.total.points { width: 1.6cm; }
+.total { font-weight: bold; }
+thead .name, thead .section { text-align: left }
+.rank { text-align: right }
+.software { font-size: smaller; }
+-->
+</style>
+</head>
+<body>
+<h1>$title</h1>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>ID A</th>
+      <th>Team A</th>
+      <th>Punkte A</th>
+      <th>Punkte B</th>
+      <th>ID B</th>
+      <th>Team B</th>
+    </tr>
+  </thead>
+  #for $play in $plays
+  <tr class="result">
+    <td>$play.id_playround</td>
+    <td>$play.id_team_a</td>
+    <td>$play.team_a.name</td>
+    <td>$play.points_a</td>
+    <td>$play.points_b</td>
+    <td>$play.id_team_b</td>
+    <td>$play.team_b.name</td>
+  </tr>
+  #end for
+</table>
+<p class="software">Software Swissturnier &lt;https://github.com/AndyStricker/swissturnier&gt;</p>
+</body>
+</html>

@@ -24,7 +24,7 @@ import sys
 sys.path.append(os.getcwd())
 import swissturnier.db
 from swissturnier.ranking import Turnier
-from swissturnier.report import ConsoleRankingTableReport, ConsolePlayTableReport
+from swissturnier.report import ConsoleRankingTableReport, ConsolePlayTableReport, HTMLPlayTable
 
 def db_instance(args):
     dbargs = {}
@@ -55,8 +55,14 @@ def report(args):
         report = ConsoleRankingTableReport(db)
         report.print(sys.stdout, full=args.full)
     elif args.playtable:
-        report = ConsolePlayTableReport(db)
-        report.print(sys.stdout, full=args.full)
+        output = sys.stdout if (args.out is None) else args.out
+        if args.html:
+            report = HTMLPlayTable(db)
+            doc = report.create()
+            output.write(doc)
+        else:
+            report = ConsolePlayTableReport(db)
+            report.print(output, full=args.full)
 
 
 def main():
@@ -91,10 +97,15 @@ def main():
     #reportparser.set_defaults(func=report)
     reportparser.add_argument('--full', default=False, action='store_true',
                         help="Show full ranking tables data")
+    reportparser.add_argument('--html', default=False, action='store_true',
+                        help="Generate HTML document")
     reportparser.add_argument('--show', default=False, action='store_true',
                         help="Show ranking tables")
     reportparser.add_argument('--playtable', default=False, action='store_true',
                         help="Show play tables")
+    reportparser.add_argument('--out', metavar='FILE', default=None,
+                        type=argparse.FileType('w', encoding='UTF-8'),
+                        help="Store result to this file")
 
     args = parser.parse_args()
     globals()[args.command_name](args)
