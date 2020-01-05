@@ -24,7 +24,7 @@ import sys
 sys.path.append(os.getcwd())
 import swissturnier.db
 from swissturnier.ranking import Turnier
-from swissturnier.report import ConsoleRankingTableReport, ConsolePlayTableReport, HTMLPlayTable
+from swissturnier.report import ConsoleRankingTableReport, ConsolePlayTableReport, HTMLPlayTable, HTMLRankingTableReport
 
 def db_instance(args):
     dbargs = {}
@@ -51,11 +51,16 @@ def report(args):
     db = db_instance(args)
     turnier = Turnier(db)
 
+    output = sys.stdout if (args.out is None) else args.out
     if args.show:
-        report = ConsoleRankingTableReport(db)
-        report.print(sys.stdout)
+        if args.html:
+            report = HTMLRankingTableReport(db)
+            doc = report.create()
+            output.write(doc)
+        else:
+            report = ConsoleRankingTableReport(db)
+            report.print(sys.stdout)
     elif args.playtable:
-        output = sys.stdout if (args.out is None) else args.out
         if args.html:
             report = HTMLPlayTable(db)
             report.round_number = args.round
