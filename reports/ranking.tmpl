@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+<title>$title</title>
+<style type="text/css">
+<!--
+body {
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 11pt;
+}
+table { border-collapse: collapse; empty-cells: show; }
+table tr { border: 1px solid black; }
+thead .name, thead .section { text-align: left; }
+th, td { padding: 0 0.4em; }
+em { font-style: italic; }
+.rank { width: 1.05cm; font-weight: bold; text-align: center; }
+.name { width: 3.4cm; }
+.points { width: 1.6cm; }
+.total { font-weight: bold; }
+.rank { text-align: right; }
+.software { font-size: smaller; }
+-->
+</style>
+</head>
+<body>
+<h1>$title</h1>
+<p>Für die ${current_round}. Runde</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rang</th>
+      <th>ID</th>
+      <th>Team</th>
+      <th>Siege</th>
+      <th>Punkte</th>
+    </tr>
+  </thead>
+  #for $rank in $ranks
+  <tr class="result">
+    <td>$rank.rank</td>
+    <td>$rank.id_team</td>
+    <td>$rank.team.name</td>
+    <td>$rank.wins</td>
+    <td>$rank.points</td>
+  </tr>
+  #end for
+</table>
+<p class="software">Software Swissturnier &lt;https://github.com/AndyStricker/swissturnier&gt;</p>
+</body>
+</html>
