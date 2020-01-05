@@ -27,6 +27,12 @@ thead .name, thead .section { text-align: left }
 </head>
 <body>
 <h1>$title</h1>
+<p>Die ${current_round}. Runde</p>
+#for $round_number, $round in $enumerate($rounds)
+#if $len($round) == 0
+#continue
+#end if
+<h2>Runde $round_number</h2>
 <table>
   <thead>
     <tr>
@@ -39,7 +45,7 @@ thead .name, thead .section { text-align: left }
       <th>Team B</th>
     </tr>
   </thead>
-  #for $play in $plays
+  #for $play in $round
   <tr class="result">
     <td>$play.id_playround</td>
     <td>$play.id_team_a</td>
@@ -51,6 +57,7 @@ thead .name, thead .section { text-align: left }
   </tr>
   #end for
 </table>
+#end for
 <p class="software">Software Swissturnier &lt;https://github.com/AndyStricker/swissturnier&gt;</p>
 </body>
 </html>

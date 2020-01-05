@@ -43,15 +43,27 @@ class ConsoleRankingTableReport(Report):
 
 
 class ConsolePlayTableReport(Report):
+    def __init__(self, db):
+        super(ConsolePlayTableReport, self).__init__(db)
+        self._round_number = None
+
+    @property
+    def round_number(self):
+        return self._round_number
+
+    @round_number.setter
+    def round_number(self, value):
+        self._round_number = value
+
     def print(self, output):
         with self.db.session_scope() as session:
-            current_round = swissturnier.db.query_current_round(session)
-            plays = (session.query(PlayRound)
-                .filter_by(round_number=current_round)
-                .order_by('id_team_a', 'id_team_b')
-                .all())
+            query = session.query(PlayRound)
+            if not self.round_number is None:
+                query = query.filter_by(round_number=self.round_number)
+            plays = query.order_by('round_number', 'id_team_a', 'id_team_b').all()
             for play in plays:
                 output.write((
+                        "{play.round_number:<2} "
                         "{play.id_playround:>2}."
                         " ({play.id_team_a:3}) {play.team_a.name:30}"
                         " {play.points_a!s:>3} : {play.points_b!s:<3}"
@@ -91,14 +103,18 @@ class HTMLPlayTable(CheetahReport):
 
     def get_namespace(self, session):
         current_round = swissturnier.db.query_current_round(session)
-        plays = (session.query(PlayRound)
-            .filter_by(round_number=current_round)
-            .order_by('id_team_a', 'id_team_b')
-            .all())
+        query = session.query(PlayRound)
+        if not self.round_number is None:
+            query = query.filter_by(round_number=self.round_number)
+        plays = query.order_by('round_number', 'id_team_a', 'id_team_b').all()
+        rounds = [list() for x in range(0, current_round + 1)]
+        for play in plays:
+            rounds[play.round_number].append(play)
         return {
             'title': self.TITLE,
             'current_round': current_round,
             'plays': plays,
+            'rounds': rounds,
         }
 
 
