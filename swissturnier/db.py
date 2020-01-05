@@ -130,6 +130,9 @@ class Category(Base):
     id_category = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
 
+    def __repr__(self):
+        return "<Category ID {id_category} '{name}'>".format(**vars(self))
+
 
 class Team(Base):
     """ A team taking part on the turnier, with its category """
@@ -138,6 +141,9 @@ class Team(Base):
     name = Column(String, nullable=False, unique=True)
     id_category = Column(ForeignKey('category.id_category'), nullable=False)
     category = sqlalchemy.orm.relationship(Category)
+
+    def __repr__(self):
+        return "<Team ID {id_team} '{name}' (C{id_category})>".format(**vars(self))
 
 
 class PlayRound(Base):
@@ -152,6 +158,9 @@ class PlayRound(Base):
     team_a = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_a)
     team_b = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_b)
 
+    def __repr__(self):
+        return "<PlayRound ID {id_playround} #{round_number} ({id_team_a}:{id_team_b})>".format(**vars(self))
+
 
 class Rankings(Base):
     """ The ranking table based on all rounds played yet """
@@ -164,6 +173,9 @@ class Rankings(Base):
     team = sqlalchemy.orm.relationship(
         Team,
         backref=sqlalchemy.orm.backref('teams', uselist=True, cascade='delete,all'))
+
+    def __repr__(self):
+        return "<Rankings ID {id_rank} #'{rank}' ({category.name})>".format(**vars(self))
 
 
 def query_current_round(session):
