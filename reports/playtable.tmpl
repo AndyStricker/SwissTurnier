@@ -50,8 +50,13 @@ em { font-style: italic; }
     <td>$play.team_a.name</td>
     <td>$play.points_a</td>
     <td>$play.points_b</td>
+#if $play.id_team_b is None
+    <td>-</td>
+    <td><em>Freispiel</em></td>
+#else
     <td>$play.id_team_b</td>
     <td>$play.team_b.name</td>
+#end if
   </tr>
   #end for
 </table>
