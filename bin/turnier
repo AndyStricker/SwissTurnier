@@ -58,10 +58,12 @@ def report(args):
         output = sys.stdout if (args.out is None) else args.out
         if args.html:
             report = HTMLPlayTable(db)
+            report.round_number = args.round
             doc = report.create()
             output.write(doc)
         else:
             report = ConsolePlayTableReport(db)
+            report.round_number = args.round
             report.print(output)
 
 
@@ -95,6 +97,8 @@ def main():
     reportparser = subparsers.add_parser('report',
         help="Report command")
     #reportparser.set_defaults(func=report)
+    reportparser.add_argument('--round', metavar='N', type=int,
+                        help="Select round to print playtable")
     reportparser.add_argument('--html', default=False, action='store_true',
                         help="Generate HTML document")
     reportparser.add_argument('--show', default=False, action='store_true',
