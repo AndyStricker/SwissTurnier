@@ -32,21 +32,18 @@ class Report(object):
 
 
 class ConsoleRankingTableReport(Report):
-    def print(self, output, full=False):
+    def print(self, output):
         with self.db.session_scope() as session:
             current_round = swissturnier.db.query_current_round(session)
             output.write('Current round: {}\n'.format(current_round))
             ranks = session.query(Rankings).order_by('rank').all()
             output.write('Ranks: {}\n'.format(len(ranks)))
             for rank in ranks:
-                if full:
-                    output.write("{0.rank:>3} {0.wins:>2} {0.points:>4} {0.team.name}\n".format(rank))
-                else:
-                    output.write("{0.rank:>3} {0.team.name}\n".format(rank))
+                output.write("{0.rank:>3} {0.wins:>2} {0.points:>4} {0.team.name}\n".format(rank))
 
 
 class ConsolePlayTableReport(Report):
-    def print(self, output, full=False):
+    def print(self, output):
         with self.db.session_scope() as session:
             current_round = swissturnier.db.query_current_round(session)
             plays = (session.query(PlayRound)

@@ -53,7 +53,7 @@ def report(args):
 
     if args.show:
         report = ConsoleRankingTableReport(db)
-        report.print(sys.stdout, full=args.full)
+        report.print(sys.stdout)
     elif args.playtable:
         output = sys.stdout if (args.out is None) else args.out
         if args.html:
@@ -62,7 +62,7 @@ def report(args):
             output.write(doc)
         else:
             report = ConsolePlayTableReport(db)
-            report.print(output, full=args.full)
+            report.print(output)
 
 
 def main():
@@ -95,8 +95,6 @@ def main():
     reportparser = subparsers.add_parser('report',
         help="Report command")
     #reportparser.set_defaults(func=report)
-    reportparser.add_argument('--full', default=False, action='store_true',
-                        help="Show full ranking tables data")
     reportparser.add_argument('--html', default=False, action='store_true',
                         help="Generate HTML document")
     reportparser.add_argument('--show', default=False, action='store_true',
