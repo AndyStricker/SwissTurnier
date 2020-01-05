@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2020 Andreas Stricker <andy@knitter.ch>
-# 
+#
 # This file is part of SwissTurnier.
-# 
+#
 # SwissTurnier is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -42,9 +42,8 @@ class ConsoleRankingTableReport(Report):
                 output.write("{0.rank:>3} {0.wins:>2} {0.points:>4} {0.team.name}\n".format(rank))
 
 
-class ConsolePlayTableReport(Report):
-    def __init__(self, db):
-        super(ConsolePlayTableReport, self).__init__(db)
+class RoundNumberMixin(object):
+    def _init_round(self):
         self._round_number = None
 
     @property
@@ -54,6 +53,12 @@ class ConsolePlayTableReport(Report):
     @round_number.setter
     def round_number(self, value):
         self._round_number = value
+
+
+class ConsolePlayTableReport(Report, RoundNumberMixin):
+    def __init__(self, db):
+        super(ConsolePlayTableReport, self).__init__(db)
+        self._init_round()
 
     def print(self, output):
         with self.db.session_scope() as session:
@@ -96,18 +101,19 @@ class CheetahReport(Report):
             return str(result)
 
 
-class HTMLPlayTable(CheetahReport):
+class HTMLPlayTable(CheetahReport, RoundNumberMixin):
     TITLE = 'Spielplan Badmintonturnier'
 
     def __init__(self, db):
         super(HTMLPlayTable, self).__init__(db, filename='playtable.tmpl')
+        self._init_round()
 
     def get_namespace(self, session):
         current_round = swissturnier.db.query_current_round(session)
         query = session.query(PlayRound)
         if not self.round_number is None:
             query = query.filter_by(round_number=self.round_number)
-        plays = query.order_by('round_number', 'id_team_a', 'id_team_b').all()
+        plays = query.order_by('round_number', 'id_playround').all()
         rounds = [list() for x in range(0, current_round + 1)]
         for play in plays:
             rounds[play.round_number].append(play)
