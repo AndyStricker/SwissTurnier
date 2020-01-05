@@ -103,6 +103,15 @@ class Turnier(object):
             current_round = swissturnier.db.query_current_round(session)
             # TODO: Check for byes and assign them first to make ranks even
             ranks = session.query(Rankings).order_by('rank').all()
+            if len(ranks) % 2 != 0:     # check for byes
+                team_a = self._find_bye_candidates(session, ranks)
+                byeplay = PlayRound(
+                    round_number=(current_round + 1),
+                    id_team_a=team_a.id_team,
+                    id_team_b=None
+                )
+                session.add(byeplay)
+
             while len(ranks) > 1:
                 team_a = ranks.pop(0)
                 team_b = self._find_new_pairing(session, ranks, team_a)
@@ -112,7 +121,25 @@ class Turnier(object):
                     id_team_b=team_b.id_team
                 )
                 session.add(play)
-                
+
+    def _find_bye_candidates(self, session, ranks):
+        index = len(ranks) - 1
+        while index > 0:
+            count = self._query_byes_by_team(session, ranks[index].team)
+            if count == 0:
+                break
+            index -= 1
+        else:
+            raise Exception("Couldn't find a team without a bye")
+        return ranks.pop(index)
+
+    def _query_byes_by_team(self, session, team):
+        """ Query byes played by a given team """
+        return (session.query(PlayRound)
+            .filter_by(id_team_a=team.id_team)
+            .filter_by(id_team_b=None)
+            .count())
+
     def _find_new_pairing(self, session, ranks, team):
         """ find another team which has not played with this team before """
         idx = 0
