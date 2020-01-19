@@ -32,6 +32,7 @@ import swissturnier.report
 from web.contrib.template import render_cheetah
 import Cheetah.Template
 
+# RESTful API with JSON including HAL (http://stateless.co/hal_spefication.html)
 
 PREFIX = '/v1'
 urls = (
@@ -40,14 +41,16 @@ urls = (
     PREFIX + '/playtable(/)?', 'APIv1PlayTable',
     PREFIX + '/categories', 'APIv1Categories',
     PREFIX + '/category/(\d+)', 'APIv1Category',
-#    PREFIX + '/teams(/)?', 'Teams',
-#    PREFIX + '/team(/)?', 'Teams',
-#    PREFIX + '/team/(\d+)', 'Team',
+    PREFIX + '/teams(/)?', 'Teams',
+    PREFIX + '/team/(\d+)', 'Team',
+    PREFIX + '/round', 'CurrentRound',
+    PREFIX + '/round/(\d+)/team/(\d+)', 'PlayRoundByTeam',
 )
 
-def _create_api_path(resource, rid):
-    return '{0}/{1}/{2}'.format(PREFIX, resource, rid)
-
+def _create_api_path(resource, *parts):
+    path = [PREFIX, resource]
+    path.extend([str(p) for p in parts])
+    return '/'.join(path)
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -97,9 +100,8 @@ class APIv1CategoryBase(object):
         obj = {}
         for name in self.CATEGORY_ATTRIBUTES:
             obj[name] = getattr(category, name)
-        obj['link'] = {
-            'rel': 'self',
-            'href': _create_api_path('category', obj['id_category']),
+        obj['_links'] = {
+            'self': { 'href': _create_api_path('category', obj['id_category']) },
         }
         return obj
 
@@ -116,6 +118,9 @@ class APIv1Categories(APIv1CategoryBase):
         return api_json_encoder.encode({
             'count': len(result),
             'result': result,
+            '_links': {
+                'self': { 'href': _create_api_path('categories') },
+            },
         })
 
 class APIv1Category(APIv1CategoryBase):
@@ -134,150 +139,116 @@ class APIv1Category(APIv1CategoryBase):
 class TeamBase(object):
     TEAM_ATTRIBUTES = ['id_team', 'name', 'category']
 
-    def get_athlete_dict(self, team):
+    def get_team_dict(self, team):
         obj = {}
         for name in self.TEAM_ATTRIBUTES:
             obj[name] = getattr(team, name)
         obj['category'] = team.category.name
-        obj['link'] = {
-            'rel': 'self',
-            'href': _create_api_path('team', obj['id_team']),
-        }
-        obj['category_ref'] = {
-            'rel': 'related',
-            'href': _create_api_path('category', obj['category']),
+        obj['_links'] = {
+            'self': { 'href': _create_api_path('team', obj['id_team']) },
+            'related': { 'href': _create_api_path('category', team.id_category) },
         }
         return obj
 
-#     def update_from_dict(self, team, data):
-#         for name in self.TEAM_ATTRIBUTES:
-#             field_type = type(getattr(team, name))
-#             v = data.get(name)
-#             if field_type is decimal.Decimal or type(v) is float:
-#                 setattr(team, name, decimal.Decimal(v) if not v is None else None)
-#             else:
-#                 setattr(team, name, v)
+class Teams(TeamBase):
+    def GET(self, slash=False):
+        if slash:
+            raise web.seeother('/teams')
 
-# class Athletes(AthleteBase):
-#     def GET(self, slash=False):
-#         if slash:
-#             raise web.seeother('/athletes')
-# 
-#         params = web.input(_unicode=True)
-# 
-#         db = athrank.db.DB()
-#         query = []
-#         if params.has_key('firstname') and len(params['firstname']) > 0:
-#             query.append(athrank.db.Athlete.firstname == params['firstname'])
-#         if params.has_key('lastname') and len(params['lastname']) > 0:
-#             query.append(athrank.db.Athlete.lastname == params['lastname'])
-#         if params.has_key('category') and len(params['category']) > 0:
-#             query.append(athrank.db.Athlete.category == params['category'])
-#         if params.has_key('sex') and len(params['sex']) > 0:
-#             query.append(athrank.db.Athlete.sex == params['sex'])
-#         if params.has_key('number') and len(params['number']) > 0:
-#             query.append(athrank.db.Athlete.number == int(params['number']))
-#         if params.has_key('section') and len(params['section']) > 0:
-#             query.append(athrank.db.Athlete.r_section == athrank.db.Section.id_section)
-#             query.append(athrank.db.Section.name == params['section'])
-#         if params.has_key('name') and len(params['name']) > 0:
-#             name_query = params['name'].replace('%', '%%').replace('*', '%').replace('_', '__').replace('?', '_').strip()
-#             query.append(athrank.db.Athlete.firstname.like(name_query) |
-#                          athrank.db.Athlete.lastname.like(name_query))
-#         athletes = db.store.find(athrank.db.Athlete, *tuple(query))
-#         athletes.order_by(athrank.db.Athlete.number)
-#         result = []
-#         for athlete in athletes:
-#             result.append(self.get_athlete_dict(athlete))
-# 
-#         web.header('Content-Type', 'application/json')
-#         return api_json_encoder.encode({
-#             'count': len(result),
-#             'result': result,
-#         })
-# 
-#     def POST(self, slash=False):
-#         if slash:
-#             raise web.seeother('/athletes')
-# 
-#     def POST(self):
-#         personal_data = web.input(
-#             'firstname', 'lastname', 'section', 'year_of_birth', 'sex',
-#             _unicode=True
-#         )
-# 
-#         db = athrank.db.DB()
-#         section = db.store.find(athrank.db.Section, name=personal_data.section)
-#         if section.is_empty():
-#             raise web.badrequest(
-#                 message='Section "{0}" not found'.format(personal_data.section)
-#             )
-#         section = section.one()
-# 
-#         year_of_birth = int(personal_data.year_of_birth)
-#         agecategory = db.store.find(
-#             athrank.db.AgeCategory,
-#             age_cohort=year_of_birth,
-#             sex=personal_data.sex
-#         )
-#         if agecategory.is_empty():
-#             raise web.badrequest(
-#                 message='Category for year "{0}" and sex "{1}" not found'.format(
-#                     personal_data.year_of_birth,
-#                     personal_data.sex
-#                 )
-#             )
-#         category = agecategory.one().category
-# 
-#         athlete = athrank.db.Athlete(
-#             firstname=personal_data.firstname,
-#             lastname=personal_data.lastname,
-#             year_of_birth=year_of_birth,
-#             sex=personal_data.sex,
-#             section=section.id_section,
-#             category=category
-#         )
-# 
-#         db.store.add(athlete)
-#         db.store.commit()
-# 
-#         web.ctx.status = '201 Created'
-#         web.header('Location', _create_api_path('athlete', athlete.id_athlete))
-#         web.header('Content-Type', 'application/json')
-#         obj = self.get_athlete_dict(athlete)
-#         return api_json_encoder.encode(obj)
-# 
-# class Athlete(AthleteBase):
-#     def GET(self, id_athlete):
-#         db = athrank.db.DB()
-#         athlete = db.store.get(athrank.db.Athlete, int(id_athlete))
-#         if athlete is None:
-#             raise web.notfound(message='Athlete with this id not found')
-#         obj = self.get_athlete_dict(athlete)
-#         web.header('Content-Type', 'application/json')
-#         return api_json_encoder.encode(obj)
-# 
-#     def PUT(self, id_athlete):
-#         data = json.loads(web.data())
-#         db = athrank.db.DB()
-#         athlete = db.store.get(athrank.db.Athlete, int(id_athlete))
-#         if athlete is None:
-#             raise web.notfound(message='Athlete with this not found')
-#         self.update_from_dict(athlete, data)
-#         db.store.commit()
-#         obj = self.get_athlete_dict(athlete)
-#         return api_json_encoder.encode(obj)
-# 
-# class AthleteStartNumber(AthleteBase):
-#     def GET(self, number):
-#         db = athrank.db.DB()
-#         athlete = db.store.find(athrank.db.Athlete, number=int(number))
-#         if athlete.is_empty():
-#             raise web.notfound(message='No Athlete with this start number found')
-#         obj = self.get_athlete_dict(athlete.one())
-#         web.header('Content-Type', 'application/json')
-#         return api_json_encoder.encode(obj)
-# 
+        params = web.input(_unicode=True)
+        result = []
+
+        db = swissturnier.db.DB()
+        with db.session_scope() as session:
+            query = []
+            if 'category' in params and len(params['category']) > 0:
+                query.append(swissturnier.db.Category.name == params['category'])
+            teams = (session
+                .query(swissturnier.db.Team)
+                .join(swissturnier.db.Team.category)
+                .filter(*query)
+                .all())
+            for team in teams:
+                result.append(self.get_team_dict(team))
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode({
+            'count': len(result),
+            'result': result,
+            '_links': {
+                'self': { 'href': _create_api_path('teams') },
+            }
+        })
+
+class Team(TeamBase):
+    def GET(self, id_team):
+        db = swissturnier.db.DB()
+        team = None
+        with db.session_scope() as session:
+            team = session.query(swissturnier.db.Team).get(int(id_team))
+            if team is None:
+                raise web.notfound(message='Team does not exist')
+            obj = self.get_team_dict(team)
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode(obj)
+
+class CurrentPlayRound(object):
+    def GET(self):
+        db = swissturnier.db.DB()
+        current_round = None
+        with db.session_scope() as session:
+            current_round = query_current_round(session)
+        return {
+            'round': current_round,
+        }
+    
+class PlayRoundBase(object):
+    PLAYROUND_ATTRIBUTES = ['id_playround', 'id_team_a', 'id_team_b', 'points_a', 'points_b']
+
+    def get_play_dict(self, playround):
+        obj = {}
+        for name in self.PLAYROUND_ATTRIBUTES:
+            obj[name] = getattr(playround, name)
+        obj['round'] = playround.round_number
+        obj['team_a'] = playround.team_a.name
+        obj['team_b'] = playround.team_b.name
+        obj['_links'] = {
+            'self': { 'href': _create_api_path('round', playround.round_number, 'team', playround.id_team_a) },
+            'related': { 'href': _create_api_path('round', playround.round_number, 'team', playround.id_team_b) },
+        }
+        return obj
+        
+    def playround(self, round_number, id_team):
+        db = swissturnier.db.DB()
+        team = None
+        with db.session_scope() as session:
+            playround = (session
+                .query(swissturnier.db.PlayRound)
+                .filter_by(round_number=round_number)
+                .filter(
+                    sqlalchemy.or_(
+                        PlayRound.id_team_a == id_team,
+                        PlayRound.id_team_b == id_team),
+                    )
+                .one())
+            if playround is None:
+                raise web.notfound(message='Play does not exist')
+            obj = self.get_play_dict(playround)
+
+class PlayRoundByTeam(PlayRoundBase, TeamBase):
+    def GET(self, round_number, id_team):
+        db = swissturnier.db.DB()
+        team = None
+        with db.session_scope() as session:
+            team = session.query(swissturnier.db.Team).get(int(id_team))
+            if team is None:
+                raise web.notfound(message='Team does not exist')
+            obj = self.get_team_dict(team)
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode(obj)
+        
 
 def get_application():
     return web.application(urls, globals())
