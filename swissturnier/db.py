@@ -180,6 +180,7 @@ class Rankings(Base):
 
 def query_current_round(session):
     """ Get the current round number from DB """
-    return session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
+    current_round = session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
+    return 0 if current_round is None else current_round
 
 
