@@ -101,7 +101,6 @@ class Turnier(object):
         """ Assing teams for the next round of play """
         with self.db.session_scope() as session:
             current_round = swissturnier.db.query_current_round(session)
-            # TODO: Check for byes and assign them first to make ranks even
             ranks = session.query(Rankings).order_by('rank').all()
             if len(ranks) % 2 != 0:     # check for byes
                 team_a = self._find_bye_candidates(session, ranks)
