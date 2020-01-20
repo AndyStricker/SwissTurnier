@@ -25,6 +25,7 @@ import web
 import web.webapi
 import json
 import decimal
+import sqlalchemy
 import swissturnier.db
 import swissturnier.ranking
 import swissturnier.report
@@ -45,6 +46,7 @@ urls = (
     PREFIX + '/team/(\d+)', 'Team',
     PREFIX + '/round', 'CurrentRound',
     PREFIX + '/round/(\d+)/team/(\d+)', 'PlayRoundByTeam',
+    PREFIX + '/round/(\d+)/team/(\d+)/points', 'PlayRoundPoints',
 )
 
 def _create_api_path(resource, *parts):
@@ -219,32 +221,66 @@ class PlayRoundBase(object):
         }
         return obj
         
-    def playround(self, round_number, id_team):
+    def playround(self, session, round_number, id_team):
         db = swissturnier.db.DB()
-        team = None
-        with db.session_scope() as session:
-            playround = (session
-                .query(swissturnier.db.PlayRound)
-                .filter_by(round_number=round_number)
-                .filter(
-                    sqlalchemy.or_(
-                        PlayRound.id_team_a == id_team,
-                        PlayRound.id_team_b == id_team),
-                    )
-                .one())
-            if playround is None:
-                raise web.notfound(message='Play does not exist')
-            obj = self.get_play_dict(playround)
+        playround = (session
+            .query(swissturnier.db.PlayRound)
+            .filter_by(round_number=round_number)
+            .filter(
+                sqlalchemy.or_(
+                    swissturnier.db.PlayRound.id_team_a == id_team,
+                    swissturnier.db.PlayRound.id_team_b == id_team),
+                )
+            .one())
+        if playround is None:
+            raise web.notfound(message='Play does not exist')
+        return playround
 
-class PlayRoundByTeam(PlayRoundBase, TeamBase):
+class PlayRoundByTeam(PlayRoundBase):
     def GET(self, round_number, id_team):
         db = swissturnier.db.DB()
-        team = None
+        obj = {}
         with db.session_scope() as session:
-            team = session.query(swissturnier.db.Team).get(int(id_team))
-            if team is None:
-                raise web.notfound(message='Team does not exist')
-            obj = self.get_team_dict(team)
+            playround = self.playround(session, round_number, id_team)
+            obj = self.get_play_dict(playround)
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode(obj)
+
+class PlayRoundByTeam(PlayRoundBase):
+    def GET(self, round_number, id_team):
+        db = swissturnier.db.DB()
+        obj = {}
+        with db.session_scope() as session:
+            playround = self.playround(session, round_number, id_team)
+            points = None
+            if id_team == playround.id_team_a:
+                points = playround.points_a
+            else:
+                points = playround.points_b
+            obj = {
+                'id_team': id_team,
+                'points': points
+            }
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode(obj)
+
+    def PUT(self, round_number, id_team):
+        data = json.loads(web.data())
+        db = swissturnier.db.DB()
+        obj = {}
+        with db.session_scope() as session:
+            playround = self.playround(session, round_number, id_team)
+            points = data['points']
+            if id_team == playround.id_team_a:
+                playround.points_a = points
+            else:
+                playround.points_b = points
+            obj = {
+                'id_team': id_team,
+                'points': points
+            }
 
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode(obj)
