@@ -64,6 +64,12 @@ class Turnier(object):
             else:
                 current_round = to_round
 
+            # reset wins and points to zero
+            ranks = session.query(Rankings).update({
+                'wins': 0,
+                'points': 0,
+            })
+
             for play_round in range(1, current_round + 1):
                 plays = session.query(PlayRound).filter_by(round_number=play_round).all()
                 for play in plays:
