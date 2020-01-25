@@ -32,7 +32,7 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 class DB(object):
     """ Encapsulate the ORM logic and provides sessions and transactions """
 
-    def __init__(self, config_file='config.json'):
+    def __init__(self, config_file='config.json', config=None):
         self._config = {
             'database': 'swissturnier',
             'schema': 'postgres',
@@ -45,6 +45,8 @@ class DB(object):
         self._connection = None
         self._sessionmaker = None
         self._init_config(config_file)
+        if not config is None:
+            self._config.update(config)
 
     @property
     def config(self):
