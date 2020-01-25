@@ -108,14 +108,15 @@ class Turnier(object):
         with self.db.session_scope() as session:
             current_round = swissturnier.db.query_current_round(session)
             ranks = session.query(Rankings).order_by('rank').all()
-            if len(ranks) % 2 != 0:     # check for byes
+            # check for byes
+            byeplay = None
+            if len(ranks) % 2 != 0:
                 team_a = self._find_bye_candidates(session, ranks)
                 byeplay = PlayRound(
                     round_number=(current_round + 1),
                     id_team_a=team_a.id_team,
                     id_team_b=None
                 )
-                session.add(byeplay)
 
             while len(ranks) > 1:
                 team_a = ranks.pop(0)
@@ -126,6 +127,9 @@ class Turnier(object):
                     id_team_b=team_b.id_team
                 )
                 session.add(play)
+
+            if not byeplay is None:
+                session.add(byeplay)
 
     def _find_bye_candidates(self, session, ranks):
         index = len(ranks) - 1
