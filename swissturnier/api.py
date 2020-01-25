@@ -73,6 +73,7 @@ class Index:
                 'total_teams': total_teams,
             }
 
+            web.header('Content-Type', 'text/html')
             render = render_cheetah('reports/api')
             return render.index(title='Teams', statistics=stats)
 
@@ -84,6 +85,7 @@ class APIv1Ranking:
         #turnier = swissturnier.ranking.Turnier(db)
         #ranking.rank()
         db = swissturnier.db.DB()
+        web.header('Content-Type', 'text/html')
         report = swissturnier.report.HTMLRankingTableReport(db)
         return report.create()
 
@@ -94,6 +96,7 @@ class APIv1PlayTable:
 
         db = swissturnier.db.DB()
         report = swissturnier.report.HTMLPlayTable(db)
+        web.header('Content-Type', 'text/html')
         return report.create()
 
 class APIv1CategoryBase(object):
