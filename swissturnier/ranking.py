@@ -22,6 +22,13 @@ from swissturnier.db import Category, Team, PlayRound, Rankings
 
 class Turnier(object):
     """ Encapsulate the turnier logic """
+
+    # How many points teams gets strongly depends on the play duration
+    # On average it's 17 and the median is 18. But when looking at
+    # winners it's 21 and for loosers it's 13. It seems reasonable to
+    # give at least 10 points up to 17 at most for a bye.
+    BYE_PLAY_POINTS = 10
+
     def __init__(self, db):
         self._db = db
 
@@ -117,7 +124,8 @@ class Turnier(object):
                 byeplay = PlayRound(
                     round_number=(current_round + 1),
                     id_team_a=team_a.id_team,
-                    id_team_b=None
+                    id_team_b=None,
+                    points_a = self.BYE_PLAY_POINTS
                 )
 
             while len(ranks) > 1:
