@@ -22,7 +22,34 @@ import os
 import sys
 sys.path.append(os.getcwd())
 from swissturnier.api import get_application
+import web.httpserver
+
+# --- Begin Static Middleware ---
+# It seems like there's a bug with the static part. Here we reimplement
+# the static part of the middleware to work around this until it's fixed.
+
+class FixedStaticApp(web.httpserver.StaticApp):
+    def __init__(self, environ, start_response):
+        super(FixedStaticApp, self).__init__(environ, start_response)
+        self.directory = os.getcwd()
+
+class FixedStaticMiddleware(web.httpserver.StaticMiddleware):
+    def __init__(self, app, prefix='/app/'):
+        super(FixedStaticMiddleware, self).__init__(app, prefix)
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        path = self.normpath(path)
+
+        if path.startswith(self.prefix):
+            return FixedStaticApp(environ, start_response)
+        else:
+            return super(FixedStaticMiddleware, self).__call__(environ, start_response)
+
+# --- End Static Middleware ---
+
 
 if __name__ == '__main__':
     app = get_application()
-    app.run()
+    middleware = [FixedStaticMiddleware]
+    app.run(*middleware)
