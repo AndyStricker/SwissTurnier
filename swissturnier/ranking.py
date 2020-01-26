@@ -90,7 +90,9 @@ class Turnier(object):
 
     def _team_play_wins(self, points_a, points_b):
         """ Winning a game get one point, drawn get a half point """
-        if points_a == points_b:
+        if points_b is None:  # bye
+            return (1.0, 0.0)
+        elif points_a == points_b:
             return (0.5, 0.5)
         elif points_a > points_b:
             return (1.0, 0.0)
