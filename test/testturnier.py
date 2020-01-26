@@ -157,10 +157,74 @@ class TestDB(unittest.TestCase):
 
         ranktable = self._get_ranktable()
         self.assertEqual(ranktable, [
+            (1, 'Duo B', 2, 30),
+            (2, 'Duo D', 1.5, 32),
+            (3, 'Duo C', 0.5, 31),
+            (4, 'Duo A', 0, 19),
+        ])
+        playtable = self._get_playtable()
+        self.assertEqual(playtable, [
+            ('Duo A', 'Duo B', 5, 10),
+            ('Duo C', 'Duo D', 16, 16),
+            ('Duo B', 'Duo C', 20, 15),
+            ('Duo D', 'Duo A', 16, 14),
+            ('Duo B', 'Duo D', None, None),
+            ('Duo C', 'Duo A', None, None),
+        ])
+
+        with self.db.session_scope() as session:
+            plays = session.query(swissturnier.db.PlayRound).all()
+            plays[4].points_a = 17
+            plays[4].points_b = 19
+            plays[5].points_a = 18
+            plays[5].points_b = 12
+
+        turnier.rank()
+
+        ranktable = self._get_ranktable()
+        self.assertEqual(ranktable, [
+            (1, 'Duo D', 2.5, 51),
+            (2, 'Duo B', 2, 47),
+            (3, 'Duo C', 1.5, 49),
+            (4, 'Duo A', 0, 31),
+        ])
+        playtable = self._get_playtable()
+        self.assertEqual(playtable, [
+            ('Duo A', 'Duo B', 5, 10),
+            ('Duo C', 'Duo D', 16, 16),
+            ('Duo B', 'Duo C', 20, 15),
+            ('Duo D', 'Duo A', 16, 14),
+            ('Duo B', 'Duo D', 17, 19),
+            ('Duo C', 'Duo A', 18, 12),
+        ])
+
+    def test_turnier_byes3(self):
+        teams = ['Team A', 'Team B', 'Team C']
+        self._insert_teams('Male', teams)
+        turnier = swissturnier.ranking.Turnier(self.db)
+        turnier.init_rankings()
+        turnier.next_round()
+
+        playtable = self._get_playtable()
+        self.assertEqual(playtable, [
+            ('Team A', 'Team B', None, None),
+            ('Team C', 'bye', 10, None),
+        ])
+
+        with self.db.session_scope() as session:
+            plays = session.query(swissturnier.db.PlayRound).all()
+            plays[0].points_a = 20
+            plays[0].points_b = 11
+
+        turnier.next_round()
+
+        ranktable = self._get_ranktable()
+        self.assertEqual(ranktable, [
             (1, 'Team A', 1, 20),
             (2, 'Team C', 1, 10),
             (3, 'Team B', 0, 11),
         ])
+
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
             ('Team A', 'Team B', 20, 11),
