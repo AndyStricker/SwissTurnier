@@ -43,7 +43,7 @@ class TestDB(unittest.TestCase):
             plays = session.query(swissturnier.db.PlayRound).all()
             return [(
                 play.team_a.name,
-                play.team_b.name,
+                play.team_b.name if play.team_b is not None else 'bye',
                 play.points_a,
                 play.points_b,
                 ) for play in plays]
@@ -128,9 +128,9 @@ class TestDB(unittest.TestCase):
             plays[0].points_b = 10
             plays[1].points_a = 16
             plays[1].points_b = 16
-  
+
         turnier.next_round()
-  
+
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
             ('Duo A', 'Duo B', 5, 10),
@@ -145,56 +145,47 @@ class TestDB(unittest.TestCase):
             (3, 'Duo D', 0.5, 16),
             (4, 'Duo A', 0, 5),
         ])
-  
+
         with self.db.session_scope() as session:
             plays = session.query(swissturnier.db.PlayRound).all()
             plays[2].points_a = 20
             plays[2].points_b = 15
             plays[3].points_a = 16
             plays[3].points_b = 14
-  
+
         turnier.next_round()
 
         ranktable = self._get_ranktable()
         self.assertEqual(ranktable, [
-            (1, 'Duo B', 2, 30),
-            (2, 'Duo D', 1.5, 32),
-            (3, 'Duo C', 0.5, 31),
-            (4, 'Duo A', 0, 19),
+            (1, 'Team A', 1, 20),
+            (2, 'Team C', 1, 10),
+            (3, 'Team B', 0, 11),
         ])
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
-            ('Duo A', 'Duo B', 5, 10),
-            ('Duo C', 'Duo D', 16, 16),
-            ('Duo B', 'Duo C', 20, 15),
-            ('Duo D', 'Duo A', 16, 14),
-            ('Duo B', 'Duo D', None, None),
-            ('Duo C', 'Duo A', None, None),
+            ('Team A', 'Team B', 20, 11),
+            ('Team C', 'bye', 10, None),
+            ('Team A', 'Team C', None, None),
+            ('Team B', 'bye', 10, None),
         ])
 
         with self.db.session_scope() as session:
             plays = session.query(swissturnier.db.PlayRound).all()
-            plays[4].points_a = 17
-            plays[4].points_b = 19
-            plays[5].points_a = 18
-            plays[5].points_b = 12
+            plays[2].points_a = 17
+            plays[2].points_b = 23
 
         turnier.rank()
 
-        ranktable = self._get_ranktable()
-        self.assertEqual(ranktable, [
-            (1, 'Duo D', 2.5, 51),
-            (2, 'Duo B', 2, 47),
-            (3, 'Duo C', 1.5, 49),
-            (4, 'Duo A', 0, 31),
-        ])
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
-            ('Duo A', 'Duo B', 5, 10),
-            ('Duo C', 'Duo D', 16, 16),
-            ('Duo B', 'Duo C', 20, 15),
-            ('Duo D', 'Duo A', 16, 14),
-            ('Duo B', 'Duo D', 17, 19),
-            ('Duo C', 'Duo A', 18, 12),
+            ('Team A', 'Team B', 20, 11),
+            ('Team C', 'bye', 10, None),
+            ('Team A', 'Team C', 17, 23),
+            ('Team B', 'bye', 10, None),
         ])
-
+        ranktable = self._get_ranktable()
+        self.assertEqual(ranktable, [
+            (1, 'Team C', 2, 33),
+            (2, 'Team A', 1, 37),
+            (3, 'Team B', 1, 21),
+        ])
