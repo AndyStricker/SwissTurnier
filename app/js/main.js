@@ -1,5 +1,5 @@
-import * as _ from './underscore.js';
-import * as Backbone from './backbone.js';
+import './underscore.js';
+import './backbone.js';
 
 (function (_window, _document, _HTMLDocument) {
 	var main = {};
