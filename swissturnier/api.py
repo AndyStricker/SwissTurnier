@@ -242,7 +242,7 @@ class PlayRounds(PlayRoundBase):
             #if 'round' in params:
             #    filters.append(swissturnier.db.PlayRound.round_number == int(params['round']))
 
-            playrounds = session.query(swissturnier.db.PlayRound).filter(*filters).all()
+            playrounds = session.query(swissturnier.db.PlayRound).filter(*filters).order_by('id_playround').all()
             results = [self.get_play_dict(playround) for playround in playrounds]
 
         web.header('Content-Type', 'application/json')
