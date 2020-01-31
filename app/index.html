@@ -8,10 +8,16 @@
 <script src="js/main.js" type="module"></script>
 
 <script type="text/template" id="play-view-tmpl">
-<td><%= id_team_a %></td>
-<td><%= id_team_b %></td>
-<td><%= points_a %></td>
-<td><%= points_b %></td>
+<td>
+	<span class="id"><%= id_team_a %></span>
+	<span class="name"><%= _embedded.team_a.name %></span>
+</td>
+<td>
+	<span class="id"><%= id_team_b %></span>
+	<span class="name"><%= _embedded.team_b ? _embedded.team_b.name : '<em>Freispiel</em>' %></span>
+</td>
+<td><input type="number" min="0" name="points_a" value="<%= points_a %>"></td>
+<td><input type="number" min="0" name="points_a" value="<%= points_b %>"></td>
 </script>
 
 </head>
