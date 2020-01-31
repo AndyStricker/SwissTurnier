@@ -1,8 +1,10 @@
 import './underscore.js';
-import './backbone.js';
+import './backbone.js';  // requires Zepto for Ajax
 
 (function (_window, _document, _HTMLDocument) {
-	var main = {};
+	var main = {
+		'API_PREFIX': '/v1',
+	};
 
 	main.SwissTurnier = function () {
 		var me =  this;
@@ -14,6 +16,10 @@ import './backbone.js';
 		return me.context;
 	};
 
+	main.makeAPI = function (url) {
+		return main.API_PREFIX + url;
+	};
+
 	/* Data Models */
 
 	main.Categories = Backbone.Collection.extend({
@@ -23,34 +29,33 @@ import './backbone.js';
 	});
 
 	main.Teams = Backbone.Collection.extend({
-		urlRoot: '/teams',
-		url: '/team',
+		urlRoot: main.makeAPI('/teams'),
+		url: main.makeAPI('/team'),
 		parse: (data) => { return data.items; }
 	});
 
 	main.PlayRounds = Backbone.Collection.extend({
-		url: '/playround',
+		url: main.makeAPI('/playround'),
 	});
 
 	main.PlayRound = Backbone.Collection.extend({
-		url: '/playround/1',
+		url: main.makeAPI('/playround/1'),
+		parse: (data) => { return data.plays; }
 	});
 
 	/* Views */
 
 	main.PlayView = Backbone.View.extend({
-		tagName: 'li',
+		tagName: 'tr',
 		className: 'play',
+		template: _.template($('#play-view-tmpl').html()),
 
 		initialize: function() {
 			//this.listenTo(this.model, 'sync change', this.render);
 		},
 
 		render: function() {
-			//var html = this.template(this.model.toJSON());
-			var html =
-				'<p>Team A: ' + this.model.get('id_team_a') + ' points: ' + this.model.get('points_a') + '</p>' +
-				'<p>Team B: ' + this.model.get('id_team_b') + ' points: ' + this.model.get('points_b') + '</p>';
+			var html = this.template(this.model.toJSON());
 			this.$el.html(html);
 			return this;
 		},
@@ -65,10 +70,10 @@ import './backbone.js';
 		},
 
 		render: function() {
-			var $list = this.$('ul.playround-list').empty();
+			var $list = this.$('tbody.playround-list').empty();
 
 			this.collection.each(function(model) {
-				var item = new PlayRoundView({model: model});
+				var item = new main.PlayView({model: model});
 				$list.append(item.render().$el);
 			}, this);
 
@@ -82,6 +87,7 @@ import './backbone.js';
 		onCreate: function() { }
 	});
 
+	/* Main part with on ready handler */
 
 	HTMLDocument.prototype.ready = function () {
 		return new Promise(function(resolve, reject) {
@@ -95,9 +101,6 @@ import './backbone.js';
 		});
 	}
 	_document.ready().then(function (doc) {
-		//console.log('The anchor:', doc.getElementById('anchor1'));
-		doc.getElementById('anchor1').innerHTML = '<em>Started up</em>';
-
 		var playRounds = new main.PlayRound();
 		var playRoundView = new main.PlayRoundListView({collection: playRounds});
 		playRounds.fetch();
