@@ -81,10 +81,13 @@ import './backbone.js';  // requires Zepto for Ajax
 		},
 
 		events: {
-			'click .create': 'onCreate'
+			'click .save-button': 'onSave',
 		},
 
-		onCreate: function() { }
+		onSave: function(ev) {
+			console.debug('XXX save');
+		},
+
 	});
 
 	/* Main part with on ready handler */
