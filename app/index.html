@@ -26,6 +26,14 @@
 <div id='anchor1'></div>
 <div id='playround-view'>
 	<form name="playround-form">
+		<form>
+			<p>
+				<label>
+					Runde:
+					<input class="playround-input" type="number" min="0" name="playround" value="1">
+				</label>
+			</p>
+		</form>
 		<table class="playround-table">
 			<thead>
 				<tr>
@@ -37,7 +45,9 @@
 			</thead>
 			<tbody class="playround-list"></tbody>
 		</table>
-		<button class="save-button" type="button" name="save-button" value="save">Speichern</button>
+		<p>
+			<button class="save-button" type="button" name="save-button" value="save">Speichern</button>
+		</p>
 	</form>
 </div>
 </body>
