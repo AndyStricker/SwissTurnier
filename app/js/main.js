@@ -34,8 +34,8 @@ import './backbone.js';  // requires Zepto for Ajax
 		parse: (data) => { return data.items; }
 	});
 
-	main.PlayRounds = Backbone.Collection.extend({
-		url: main.makeAPI('/playround'),
+	main.Play = Backbone.Collection.extend({
+		url: main.makeAPI('/play'),
 	});
 
 	main.PlayRound = Backbone.Collection.extend({
@@ -55,9 +55,23 @@ import './backbone.js';  // requires Zepto for Ajax
 		},
 
 		render: function() {
-			var html = this.template(this.model.toJSON());
+			const html = this.template(this.model.toJSON());
 			this.$el.html(html);
 			return this;
+		},
+
+		events: {
+			'change .result-input': 'onChange',
+		},
+
+		onChange: function(ev) {
+			console.debug('XXX Play changed');
+			const field = ev.target.name;
+			const old_value = this.model.get(field);
+			const el = this.$(ev.target)
+			const new_value = Number.parseInt(el.val());
+			this.model.set(field, new_value);
+			this.model.save();
 		},
 	});
 
@@ -82,12 +96,21 @@ import './backbone.js';  // requires Zepto for Ajax
 
 		events: {
 			'click .save-button': 'onSave',
+			'change .playround-input': 'onPlayRoundChange',
 		},
 
 		onSave: function(ev) {
 			console.debug('XXX save');
+			this.collection.sync();
 		},
 
+		onPlayRoundChange: function (ev) {
+			console.debug('XXX playround change');
+			const el = this.$(ev.target);
+			const playround = Number.parseInt(el.val());
+			this.collection.url = main.makeAPI('/playround/' + playround);
+			this.collection.fetch();
+		},
 	});
 
 	/* Main part with on ready handler */
