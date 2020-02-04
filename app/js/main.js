@@ -22,24 +22,36 @@ import './backbone.js';  // requires Zepto for Ajax
 
 	/* Data Models */
 
+	main.Category = Backbone.Model.extend({
+		url: main.makeAPI('/category'),
+		idAttribute: 'id_category',
+	});
+
 	main.Categories = Backbone.Collection.extend({
-		urlRoot: '/categories',
-		url: '/category',
+		model: main.Category,
+		url: '/categories',
 		parse: (data) => { return data.items; }
+	});
+
+	main.Team = Backbone.Model.extend({
+		url: main.makeAPI('/team'),
+		idAttribute: 'id_team',
 	});
 
 	main.Teams = Backbone.Collection.extend({
-		urlRoot: main.makeAPI('/teams'),
-		url: main.makeAPI('/team'),
+		model: main.Team,
+		url: main.makeAPI('/teams'),
 		parse: (data) => { return data.items; }
 	});
 
-	main.Play = Backbone.Collection.extend({
+	main.Play = Backbone.Model.extend({
 		url: main.makeAPI('/play'),
+		idAttribute: 'id_playround',
 	});
 
 	main.PlayRound = Backbone.Collection.extend({
 		url: main.makeAPI('/playround/1'),
+		model: main.Play,
 		parse: (data) => { return data.plays; }
 	});
 
@@ -52,10 +64,13 @@ import './backbone.js';  // requires Zepto for Ajax
 
 		initialize: function() {
 			//this.listenTo(this.model, 'sync change', this.render);
+			//this.listenTo(this.model, 'change', this.render);
+			//this.listenTo(this.model, 'destroy', this.remove);
 		},
 
 		render: function() {
-			const html = this.template(this.model.toJSON());
+			const data = this.model.toJSON();
+			const html = this.template(data);
 			this.$el.html(html);
 			return this;
 		},
@@ -65,11 +80,17 @@ import './backbone.js';  // requires Zepto for Ajax
 		},
 
 		onChange: function(ev) {
-			console.debug('XXX Play changed');
 			const field = ev.target.name;
+
+			window.model = this.model;
 			const old_value = this.model.get(field);
 			const el = this.$(ev.target)
 			const new_value = Number.parseInt(el.val());
+
+			const links = this.model.get('_links');
+			const url = links.self.href;
+			this.model.url = url;
+
 			this.model.set(field, new_value);
 			this.model.save();
 		},
@@ -100,12 +121,10 @@ import './backbone.js';  // requires Zepto for Ajax
 		},
 
 		onSave: function(ev) {
-			console.debug('XXX save');
 			this.collection.sync();
 		},
 
 		onPlayRoundChange: function (ev) {
-			console.debug('XXX playround change');
 			const el = this.$(ev.target);
 			const playround = Number.parseInt(el.val());
 			this.collection.url = main.makeAPI('/playround/' + playround);
