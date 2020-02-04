@@ -1,0 +1,14 @@
+body {
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 11pt;
+}
+table {
+    border-collapse: collapse;
+}
+thead tr {
+    font-weight: bold;
+    text-align: center;
+}
+td, th {
+    border: 1px solid black;
+}

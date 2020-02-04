@@ -44,9 +44,9 @@ urls = (
     PREFIX + '/category/(\d+)', 'APIv1Category',
     PREFIX + '/teams(/)?', 'Teams',
     PREFIX + '/team/(\d+)', 'Team',
-    PREFIX + '/round', 'CurrentRound',
-    PREFIX + '/round/(\d+)/team/(\d+)', 'PlayRoundByTeam',
-    PREFIX + '/round/(\d+)/team/(\d+)/points', 'PlayRoundPoints',
+    PREFIX + '/currentround', 'CurrentPlayRound',
+    PREFIX + '/playround/(\d+)', 'PlayRounds',
+    PREFIX + '/play/(\d+)', 'Play',
 )
 
 def _create_api_path(resource, *parts):
@@ -122,7 +122,7 @@ class APIv1Categories(APIv1CategoryBase):
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode({
             'count': len(result),
-            'result': result,
+            'items': result,
             '_links': {
                 'self': { 'href': _create_api_path('categories') },
             },
@@ -179,7 +179,7 @@ class Teams(TeamBase):
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode({
             'count': len(result),
-            'result': result,
+            'items': result,
             '_links': {
                 'self': { 'href': _create_api_path('teams') },
             }
@@ -203,91 +203,78 @@ class CurrentPlayRound(object):
         db = swissturnier.db.DB()
         current_round = None
         with db.session_scope() as session:
-            current_round = query_current_round(session)
+            current_round = swissturnier.db.query_current_round(session)
         return {
             'round': current_round,
         }
     
-class PlayRoundBase(object):
-    PLAYROUND_ATTRIBUTES = ['id_playround', 'id_team_a', 'id_team_b', 'points_a', 'points_b']
+class PlayRoundBase(TeamBase):
+    PLAYROUND_ATTRIBUTES = [
+        'id_playround',
+        'round_number',
+        'id_team_a',
+        'id_team_b',
+        'points_a',
+        'points_b'
+    ]
 
     def get_play_dict(self, playround):
         obj = {}
         for name in self.PLAYROUND_ATTRIBUTES:
             obj[name] = getattr(playround, name)
-        obj['round'] = playround.round_number
-        obj['team_a'] = playround.team_a.name
-        obj['team_b'] = playround.team_b.name
+        obj['_embedded'] = {
+            'team_a': self.get_team_dict(playround.team_a),
+            'team_b': None if playround.team_b is None else self.get_team_dict(playround.team_b),
+        }
         obj['_links'] = {
-            'self': { 'href': _create_api_path('round', playround.round_number, 'team', playround.id_team_a) },
-            'related': { 'href': _create_api_path('round', playround.round_number, 'team', playround.id_team_b) },
+            'self': { 'href': _create_api_path('play', playround.id_playround) },
         }
         return obj
         
-    def playround(self, session, round_number, id_team):
-        db = swissturnier.db.DB()
-        playround = (session
-            .query(swissturnier.db.PlayRound)
-            .filter_by(round_number=round_number)
-            .filter(
-                sqlalchemy.or_(
-                    swissturnier.db.PlayRound.id_team_a == id_team,
-                    swissturnier.db.PlayRound.id_team_b == id_team),
-                )
-            .one())
-        if playround is None:
-            raise web.notfound(message='Play does not exist')
-        return playround
+class PlayRounds(PlayRoundBase):
 
-class PlayRoundByTeam(PlayRoundBase):
-    def GET(self, round_number, id_team):
+    def GET(self, round_number):
+        params = web.input(_unicode=True)
+        db = swissturnier.db.DB()
+        results = []
+        with db.session_scope() as session:
+            filters = [swissturnier.db.PlayRound.round_number == int(round_number)]
+            #if 'round' in params:
+            #    filters.append(swissturnier.db.PlayRound.round_number == int(params['round']))
+
+            playrounds = session.query(swissturnier.db.PlayRound).filter(*filters).order_by('id_playround').all()
+            results = [self.get_play_dict(playround) for playround in playrounds]
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode({
+            'count': len(results),
+            'plays': results,
+        })
+
+
+class Play(PlayRoundBase):
+    def GET(self, id_play):
         db = swissturnier.db.DB()
         obj = {}
         with db.session_scope() as session:
-            playround = self.playround(session, round_number, id_team)
-            obj = self.get_play_dict(playround)
-
+            play = session.query(swissturnier.db.PlayRound).get(int(id_play))
+            obj = self.get_play_dict(play)
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode(obj)
 
-class PlayRoundByTeam(PlayRoundBase):
-    def GET(self, round_number, id_team):
-        db = swissturnier.db.DB()
-        obj = {}
-        with db.session_scope() as session:
-            playround = self.playround(session, round_number, id_team)
-            points = None
-            if id_team == playround.id_team_a:
-                points = playround.points_a
-            else:
-                points = playround.points_b
-            obj = {
-                'id_team': id_team,
-                'points': points
-            }
-
-        web.header('Content-Type', 'application/json')
-        return api_json_encoder.encode(obj)
-
-    def PUT(self, round_number, id_team):
+    def PUT(self, id_play):
         data = json.loads(web.data())
+
         db = swissturnier.db.DB()
-        obj = {}
         with db.session_scope() as session:
-            playround = self.playround(session, round_number, id_team)
-            points = data['points']
-            if id_team == playround.id_team_a:
-                playround.points_a = points
-            else:
-                playround.points_b = points
-            obj = {
-                'id_team': id_team,
-                'points': points
-            }
+            play = session.query(swissturnier.db.PlayRound).get(int(id_play))
+            play.points_a = data.get('points_a')
+            play.points_b = data.get('points_b')
+            obj = self.get_play_dict(play)
 
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode(obj)
-        
+
 
 def get_application():
     return web.application(urls, globals())
