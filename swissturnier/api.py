@@ -262,6 +262,19 @@ class Play(PlayRoundBase):
         web.header('Content-Type', 'application/json')
         return api_json_encoder.encode(obj)
 
+    def PUT(self, id_play):
+        data = json.loads(web.data())
+
+        db = swissturnier.db.DB()
+        with db.session_scope() as session:
+            play = session.query(swissturnier.db.PlayRound).get(int(id_play))
+            play.points_a = data.get('points_a')
+            play.points_b = data.get('points_b')
+            obj = self.get_play_dict(play)
+
+        web.header('Content-Type', 'application/json')
+        return api_json_encoder.encode(obj)
+
 
 def get_application():
     return web.application(urls, globals())
