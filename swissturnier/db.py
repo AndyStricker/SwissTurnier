@@ -17,30 +17,90 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlalchemy
-from sqlalchemy import Column, String, Integer, Float, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
 import sqlalchemy.orm
 import sqlalchemy.ext.declarative
  
 from contextlib import contextmanager
 import urllib.parse
+import datetime
 import json
 import sys
 import errno
 
 Base = sqlalchemy.ext.declarative.declarative_base()
  
+class PlaySettings(dict):
+    @property
+    def start_time(self):
+        return datetime.datetime.fromisoformat(self['start_time'])
+
+    @property
+    def play_time(self):
+        return datetime.timedelta(seconds=self['play_time'])
+
+    @property
+    def rotation_time(self):
+        return datetime.timedelta(seconds=self['rotation_time'])
+
+    @property
+    def pause_time(self):
+        """ Duration of pause between play rounds """
+        return datetime.timedelta(seconds=self['pause_time'])
+
+    @property
+    def courts(self):
+        """ Number of available courts """
+        return self['courts']
+
+
+class Configuration(dict):
+    @property
+    def database(self):
+        return self['database']
+
+    @property
+    def schema(self):
+        return self['schema']
+
+    @property
+    def user(self):
+        return self['user']
+
+    @property
+    def password(self):
+        return self['password']
+
+    @property
+    def host(self):
+        return self['host']
+
+    @property
+    def port(self):
+        return self['port']
+
+    @property
+    def port(self):
+        return self['port']
+
+    @property
+    def play_settings(self):
+        """ Play settings (duration, court count, non-DB related) """
+        return PlaySettings(self['play_settings'])
+
+
 class DB(object):
     """ Encapsulate the ORM logic and provides sessions and transactions """
 
     def __init__(self, config_file='config.json', config=None):
-        self._config = {
+        self._config = Configuration({
             'database': 'swissturnier',
             'schema': 'postgres',
             'user': 'stuser',
             'password': None,
             'host': 'localhost',
             'port': 5432,
-        }
+        })
         self._engine = None
         self._connection = None
         self._sessionmaker = None
@@ -55,7 +115,10 @@ class DB(object):
 
     @config.setter
     def config(self, value):
-        self._config = value
+        if isinstance(value, Configuration):
+            self._config = value
+        else:
+            self._config = Configuration(value)
 
     @property
     def engine(self):
@@ -157,6 +220,7 @@ class PlayRound(Base):
     id_team_b = Column(ForeignKey('team.id_team'))
     points_a = Column(Integer)
     points_b = Column(Integer)
+    start_time = Column(DateTime)
     team_a = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_a)
     team_b = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_b)
 
@@ -181,8 +245,14 @@ class Rankings(Base):
 
 
 def query_current_round(session):
-    """ Get the current round number from DB """
+    """
+    Get the current round number from DB
+
+    The current round starts at 0 (first round is zero).
+    """
     current_round = session.query(sqlalchemy.func.max(PlayRound.round_number)).scalar()
     return 0 if current_round is None else current_round
 
-
+def query_team_count(session):
+    """ Get the current round number from DB """
+    return session.query(Team).count()

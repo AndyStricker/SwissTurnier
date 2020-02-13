@@ -19,6 +19,7 @@
 import sqlalchemy
 import swissturnier.db
 from swissturnier.db import Category, Team, PlayRound, Rankings
+import math
 
 class Turnier(object):
     """ Encapsulate the turnier logic """
@@ -35,6 +36,10 @@ class Turnier(object):
     @property
     def db(self):
         return self._db
+
+    @property
+    def play_settings(self):
+        return self.db.config.play_settings
 
     def init_rankings(self):
         """ Initially clear and regenerate the rankings table """
@@ -116,6 +121,8 @@ class Turnier(object):
         """ Assing teams for the next round of play """
         with self.db.session_scope() as session:
             current_round = swissturnier.db.query_current_round(session)
+            team_count = swissturnier.db.query_team_count(session)
+
             ranks = session.query(Rankings).order_by('rank').all()
             # check for byes
             byeplay = None
@@ -128,15 +135,23 @@ class Turnier(object):
                     points_a = self.BYE_PLAY_POINTS
                 )
 
+            round_nth_play = 1
             while len(ranks) > 1:
                 team_a = ranks.pop(0)
                 team_b = self._find_new_pairing(session, ranks, team_a)
+                start_time = self._calculate_play_starttime(
+                    current_round,
+                    round_nth_play,
+                    team_count
+                )
                 play = PlayRound(
                     round_number=(current_round + 1),
                     id_team_a=team_a.id_team,
-                    id_team_b=team_b.id_team
+                    id_team_b=team_b.id_team,
+                    start_time=start_time
                 )
                 session.add(play)
+                round_nth_play += 1
 
             if not byeplay is None:
                 session.add(byeplay)
@@ -179,3 +194,25 @@ class Turnier(object):
                         PlayRound.id_team_b == team1.id_team)
                 )
             ).count() > 0)
+
+    def _calculate_play_starttime(self, current_round, round_nth_play, team_count):
+        start_time = self.play_settings.start_time
+        play_time = self.play_settings.play_time
+        rotation_time = self.play_settings.rotation_time
+        pause_time = self.play_settings.pause_time
+        courts = self.play_settings.courts
+
+        # team_count halved equals the pairings and therefore plays.
+        # Divided by courts we have the number of plays for each round
+        # that are not at the same time:
+        round_timeslots = int(math.ceil(math.floor(team_count / 2.0) / courts))
+        # Each round duration is the play time plus rotation time times
+        # the number of time slots:
+        round_time = round_timeslots * (play_time + rotation_time) + pause_time
+        # Once we know the round time we are able to calculate the time
+        # a round starts:
+        round_start_time = start_time + current_round * round_time
+        # With all above we can calculate the start time of the play:
+        play_start_time = round_start_time + math.floor(float(round_nth_play - 1) / courts) * (play_time + rotation_time)
+
+        return play_start_time

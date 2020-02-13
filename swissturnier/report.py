@@ -30,6 +30,10 @@ class Report(object):
     def db(self):
         return self._db
 
+    @property
+    def config(self):
+        return self.db.config
+
 
 class ConsoleRankingTableReport(Report):
     def print(self, output):
@@ -65,14 +69,15 @@ class ConsolePlayTableReport(Report, RoundNumberMixin):
             query = session.query(PlayRound)
             if not self.round_number is None:
                 query = query.filter_by(round_number=self.round_number)
-            plays = query.order_by('round_number', 'id_team_a', 'id_team_b').all()
+            plays = query.order_by('round_number', 'start_time', 'id_playround').all()
             for play in plays:
                 output.write((
                         "{play.round_number:<2} "
+                        "{play.start_time!s:<12} "
                         "{play.id_playround:>2}."
                         " ({play.id_team_a:3}) {play.team_a.name:30}"
-                        " {play.points_a!s:>3} : {play.points_b!s:<3}"
-                        " ({team_b_id}) {team_b_name}"
+                        " {play.points_a!s:>4} : {play.points_b!s:<4}"
+                        " ({team_b_id:3}) {team_b_name}"
                         "\n"
                     ).format(
                         play=play,
@@ -113,7 +118,7 @@ class HTMLPlayTable(CheetahReport, RoundNumberMixin):
         query = session.query(PlayRound)
         if not self.round_number is None:
             query = query.filter_by(round_number=self.round_number)
-        plays = query.order_by('round_number', 'id_playround').all()
+        plays = query.order_by('round_number', 'start_time', 'id_playround').all()
         rounds = [list() for x in range(0, current_round + 1)]
         for play in plays:
             rounds[play.round_number].append(play)

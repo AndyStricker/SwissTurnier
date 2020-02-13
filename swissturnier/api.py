@@ -25,6 +25,7 @@ import web
 import web.webapi
 import json
 import decimal
+import datetime
 import sqlalchemy
 import swissturnier.db
 import swissturnier.ranking
@@ -58,6 +59,8 @@ class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
             return float(o)
+        elif isinstance(o, datetime.datetime):
+            return o.isoformat()
         return json.JSONEncoder.default(self, o)
 
 api_json_encoder = JSONEncoder()
@@ -215,7 +218,8 @@ class PlayRoundBase(TeamBase):
         'id_team_a',
         'id_team_b',
         'points_a',
-        'points_b'
+        'points_b',
+        'start_time',
     ]
 
     def get_play_dict(self, playround):
