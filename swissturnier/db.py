@@ -221,6 +221,7 @@ class PlayRound(Base):
     points_a = Column(Integer)
     points_b = Column(Integer)
     start_time = Column(DateTime)
+    court = Column(String)
     team_a = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_a)
     team_b = sqlalchemy.orm.relationship(Team, foreign_keys=id_team_b)
 

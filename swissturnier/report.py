@@ -74,6 +74,7 @@ class ConsolePlayTableReport(Report, RoundNumberMixin):
                 output.write((
                         "{play.round_number:<2} "
                         "{play.start_time!s:<12} "
+                        "{play.court!s} "
                         "{play.id_playround:>2}."
                         " ({play.id_team_a:3}) {play.team_a.name:30}"
                         " {play.points_a!s:>4} : {play.points_b!s:<4}"

@@ -84,7 +84,8 @@ CREATE TABLE playround (
     id_team_b integer,
     points_a integer,
     points_b integer,
-    start_time timestamp with time zone
+    start_time timestamp with time zone,
+    court text
 );
 
 ALTER TABLE public.playround OWNER TO stuser;

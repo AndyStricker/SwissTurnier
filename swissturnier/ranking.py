@@ -148,7 +148,8 @@ class Turnier(object):
                     round_number=(current_round + 1),
                     id_team_a=team_a.id_team,
                     id_team_b=team_b.id_team,
-                    start_time=start_time
+                    start_time=start_time,
+                    court=self._assign_court(round_nth_play)
                 )
                 session.add(play)
                 round_nth_play += 1
@@ -216,3 +217,8 @@ class Turnier(object):
         play_start_time = round_start_time + math.floor(float(round_nth_play - 1) / courts) * (play_time + rotation_time)
 
         return play_start_time
+
+    def _assign_court(self, round_nth_play):
+        courts = self.play_settings.courts
+        court_number = (round_nth_play - 1) % courts
+        return chr(ord('A') + court_number)

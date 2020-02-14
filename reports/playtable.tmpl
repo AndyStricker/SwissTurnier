@@ -36,6 +36,7 @@ em { font-style: italic; }
     <tr>
       <th>ID</th>
       <th>Start</th>
+      <th>Platz</th>
       <th>ID A</th>
       <th>Team A</th>
       <th>Punkte A</th>
@@ -48,6 +49,7 @@ em { font-style: italic; }
   <tr class="result">
     <td>$play.id_playround</td>
     <td>${'' if play.start_time is None else "{:%H:%M}".format(play.start_time)}</td>
+    <td>$play.court</td>
     <td>$play.id_team_a</td>
     <td>$play.team_a.name</td>
     <td>$play.points_a</td>
