@@ -16,11 +16,7 @@ Create relations
 
 user@host$ psql -h localhost -p 5432 -U stuser swissturnier
 
-athrank=> \i db/awards.sql 
-athrank=> \i db/sexes.sql 
-athrank=> \i db/sections.sql 
-athrank=> \i db/categories.sql 
-athrank=> \i db/category.sql 
-athrank=> \i db/agecategory.sql 
+swissturnier=> \i sql/swissturnier.sql
+swissturnier=> INSERT INTO category (name) VALUES ('Mixed'), ('Mixed U18'), ('Frauen'), ('Frauen Ü40'), ('Männer'), ('Männer Ü40');
+swissturnier=> \i teams.sql
 
-athrank=> \i participants.sql
