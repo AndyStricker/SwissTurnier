@@ -199,8 +199,10 @@ class TestDB(unittest.TestCase):
         ])
 
     def test_turnier_byes3(self):
+        BYE_PLAY_POINTS = swissturnier.ranking.Turnier.BYE_PLAY_POINTS
         teams = ['Team A', 'Team B', 'Team C']
         self._insert_teams('Male', teams)
+
         turnier = swissturnier.ranking.Turnier(self.db)
         turnier.init_rankings()
         turnier.next_round()
@@ -208,7 +210,7 @@ class TestDB(unittest.TestCase):
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
             ('Team A', 'Team B', None, None),
-            ('Team C', 'bye', 10, None),
+            ('Team C', 'bye', BYE_PLAY_POINTS, None),
         ])
 
         with self.db.session_scope() as session:
@@ -221,16 +223,16 @@ class TestDB(unittest.TestCase):
         ranktable = self._get_ranktable()
         self.assertEqual(ranktable, [
             (1, 'Team A', 1, 20),
-            (2, 'Team C', 1, 10),
+            (2, 'Team C', 1, BYE_PLAY_POINTS),
             (3, 'Team B', 0, 11),
         ])
 
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
             ('Team A', 'Team B', 20, 11),
-            ('Team C', 'bye', 10, None),
+            ('Team C', 'bye', BYE_PLAY_POINTS, None),
             ('Team A', 'Team C', None, None),
-            ('Team B', 'bye', 10, None),
+            ('Team B', 'bye', BYE_PLAY_POINTS, None),
         ])
 
         with self.db.session_scope() as session:
@@ -243,13 +245,13 @@ class TestDB(unittest.TestCase):
         playtable = self._get_playtable()
         self.assertEqual(playtable, [
             ('Team A', 'Team B', 20, 11),
-            ('Team C', 'bye', 10, None),
+            ('Team C', 'bye', BYE_PLAY_POINTS, None),
             ('Team A', 'Team C', 17, 23),
-            ('Team B', 'bye', 10, None),
+            ('Team B', 'bye', BYE_PLAY_POINTS, None),
         ])
         ranktable = self._get_ranktable()
         self.assertEqual(ranktable, [
-            (1, 'Team C', 2, 33),
+            (1, 'Team C', 2, 23 + BYE_PLAY_POINTS),
             (2, 'Team A', 1, 37),
-            (3, 'Team B', 1, 21),
+            (3, 'Team B', 1, 11 + BYE_PLAY_POINTS),
         ])
