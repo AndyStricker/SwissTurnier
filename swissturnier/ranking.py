@@ -25,10 +25,10 @@ class Turnier(object):
     """ Encapsulate the turnier logic """
 
     # How many points teams gets strongly depends on the play duration
-    # On average it's 17 and the median is 18. But when looking at
-    # winners it's 21 and for loosers it's 13. It seems reasonable to
-    # give at least 10 points up to 17 at most for a bye.
-    BYE_PLAY_POINTS = 10
+    # On average it's 18 and the median is 18. But when looking at
+    # winners it's 21 and for loosers it's 15. It seems reasonable to
+    # give at least 15 points up to 17 at most for a bye.
+    BYE_PLAY_POINTS = 15
 
     def __init__(self, db):
         self._db = db
